@@ -6,8 +6,8 @@
 #include <MQTT_client.hpp>
 #include <MD5.hpp>
 
-const char* ssid     = "Wifina";
-const char* password = "martinko";
+const char* ssid     = "ssid";
+const char* password = "password";
 
 const char* module_id   = "DUMMY_ID";
 const char* module_type = "DUMMY_TYPE";
@@ -32,8 +32,7 @@ void setup(){
 
   fw_updater = new FW_updater(gateway_ip, 5000);
   
-  mqtt_client = new MQTT_client("192.168.1.6");
-  // mqtt_client = new MQTT_client(gateway_ip);
+  mqtt_client = new MQTT_client(gateway_ip);
   mqtt_client->set_mqtt_params(module_id, module_type, resolve_mqtt);
   mqtt_client->connect();
   mqtt_client->publish_module_id();
@@ -85,6 +84,9 @@ void resolve_mqtt(String& topic, String& payload){
   } else if (topic.equals(String(module_id) + "/SET_VALUE")){
     const uint32_t device_id = payload_json["device_id"];
     const char* datapoint = payload_json["datapoint"];
+
+    Serial.print("device_id: " + device_id);
+    Serial.println(" datapoint: " + String(datapoint));
 
     // TODO: CUSTOM SET_VALUE ACTION
   } else if (topic.equals(String(module_id) + "/UPDATE_FW")){
