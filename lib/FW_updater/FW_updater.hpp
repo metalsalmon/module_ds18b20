@@ -8,11 +8,11 @@
 class FW_updater{
   public:
     FW_updater(const char gw_ip[], const unsigned short port = 80);
-    bool update();
+    bool update(const char version[]);
   
   private:
     WiFiClient wifi_client;
-    char* url;
+    char* url = nullptr;
 };
 
 #endif
