@@ -46,10 +46,15 @@ void loop(){
   mqtt_client->mqtt_loop();
 
   // DynamicJsonDocument json(512);
-  // json["datapoint_code_1"] = 22.3;
-  // json["datapoint_code_2"] = "string";
-  // json["datapoint_code_3"] = true;
-  // mqtt_client->publish_value_update(12, json);
+  // JsonObject device_1_obj = doc.createNestedObject("[DEVICE_ID]");
+  // device_1_obj["datapoint_code_1"] = 22.3;
+  // device_1_obj["datapoint_code_2"] = "string";
+  // device_1_obj["datapoint_code_3"] = true;
+  // JsonObject device_2_obj = doc.createNestedObject("[DEVICE_ID]");
+  // device_2_obj["datapoint_code_1"] = 22.3;
+  // device_2_obj["datapoint_code_2"] = "string";
+  // device_2_obj["datapoint_code_3"] = true;
+  // mqtt_client->publish_value_update(json);
   
   // delay(1000);
 }
