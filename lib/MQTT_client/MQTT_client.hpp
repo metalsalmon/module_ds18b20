@@ -15,7 +15,7 @@ class MQTT_client{
     bool publish(const char topic[], const char payload[], const uint8_t QOS = 2);
     bool publish_module_id(const uint8_t QOS = 2);
     bool publish_config_update(const char config_hash[], const uint8_t QOS = 2);
-    bool publish_value_update(const uint32_t device_id, DynamicJsonDocument datapoints_json, const uint8_t QOS = 0);
+    bool publish_value_update(DynamicJsonDocument values_json, const uint8_t QOS = 0);
     bool mqtt_loop();
 
     ~MQTT_client();

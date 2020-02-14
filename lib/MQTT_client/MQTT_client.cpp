@@ -61,12 +61,11 @@ bool MQTT_client::publish_config_update(const char config_hash[], const uint8_t 
   return res;
 }
 
-bool MQTT_client::publish_value_update(const uint32_t device_id, DynamicJsonDocument datapoints_json, const uint8_t QOS){
+bool MQTT_client::publish_value_update(DynamicJsonDocument values_json, const uint8_t QOS){
   char msg[256];
   DynamicJsonDocument json(512);
   json["module_uuid"] = module_id;
-  json["device_id"] = device_id;
-  json["datapoints"] = datapoints_json;
+  json["values"] = values_json;
   serializeJson(json, msg);
 
   bool res = publish("VALUE_UPDATE", msg, QOS);

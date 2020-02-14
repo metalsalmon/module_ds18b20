@@ -6,14 +6,14 @@
 #include <MQTT_client.hpp>
 #include <MD5.hpp>
 
-const char* ssid     = "ssid";
-const char* password = "password";
+static const char* ssid     = "ssid";
+static const char* password = "password";
 
-const char* module_id   = "DUMMY_ID";
-const char* module_type = "DUMMY_TYPE";
+static const char* module_id   = "DUMMY_ID";
+static const char* module_type = "DUMMY_TYPE";
 
-FW_updater  *fw_updater = nullptr;
-MQTT_client *mqtt_client = nullptr;
+static FW_updater  *fw_updater = nullptr;
+static MQTT_client *mqtt_client = nullptr;
 
 void resolve_mqtt(String& topic, String& payload);
 
@@ -58,9 +58,14 @@ void resolve_mqtt(String& topic, String& payload){
   Serial.println("incoming: " + topic + " - " + payload); 
 
   DynamicJsonDocument payload_json(256);
-  deserializeJson(payload_json, payload);
+  DeserializationError json_err = deserializeJson(payload_json, payload);
 
-  if (topic.equals("ALL_MODULES")){
+  if (json_err) {
+    Serial.println("JSON error: code " + String(json_err.c_str()));
+    return;
+  }
+
+  if (topic.equals("ALL_MODULES") || topic.equals(String(module_id) + "/REQUEST")) {
     const char* request = payload_json["request"];
 
     if (request != nullptr){
@@ -68,10 +73,24 @@ void resolve_mqtt(String& topic, String& payload){
         mqtt_client->publish_module_id();
       } else if (String(request) == "shutdown"){
         // TODO: CUSTOM SHUTDOWN ACTION
-      } 
+      } else if (String(request) == "init") {
+        // TODO: CUSTOM INIT ACTION
+      }
     }
   } else if (topic.equals(String(module_id) + "/SET_CONFIG")){    
-    // TODO: CUSTOM SET_CONFIG ACTION
+    JsonObject json_config = payload_json.as<JsonObject>();
+
+    for (JsonPair pair : json_config) {
+      const char* device_id = pair.key().c_str(); 
+      const auto device_config = pair.value().as<JsonObject>();
+
+      // TODO: CUSTOM DEVICE ADDRESS ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
+      // E.G: const uint8_t address = device_config["address"];
+
+      const uint16_t poll_rate = device_config["poll_rate"];
+
+      // TODO: CUSTOM DEVICE CREATION ACTION
+    }
 
     char* payload_cpy = strdup(payload.c_str());
     unsigned char* md5_hash = MD5::make_hash(payload_cpy);
@@ -84,9 +103,12 @@ void resolve_mqtt(String& topic, String& payload){
   } else if (topic.equals(String(module_id) + "/SET_VALUE")){
     const uint32_t device_id = payload_json["device_id"];
     const char* datapoint = payload_json["datapoint"];
+    // TODO: CUSTOM VALUE ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
+    // E.G: const uint8_t value = payload_json["value"]; 
 
     Serial.print("device_id: " + device_id);
-    Serial.println(" datapoint: " + String(datapoint));
+    Serial.print(" datapoint: " + String(datapoint));
+    // Serial.println(" value: " + String(value));
 
     // TODO: CUSTOM SET_VALUE ACTION
   } else if (topic.equals(String(module_id) + "/UPDATE_FW")){
