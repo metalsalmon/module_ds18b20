@@ -23,7 +23,7 @@ void setup(){
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED){
-    delay(500);  
+    delay(500);
   }
 
   char* gateway_ip = nullptr;
@@ -31,7 +31,7 @@ void setup(){
   asprintf(&gateway_ip, "%d.%d.%d.%d", gw[0], gw[1], gw[2], gw[3]);
 
   fw_updater = new FW_updater(gateway_ip, 5000);
-  
+
   mqtt_client = new MQTT_client(gateway_ip);
   mqtt_client->set_mqtt_params(module_id, module_type, resolve_mqtt);
   mqtt_client->connect();
@@ -46,21 +46,21 @@ void loop(){
   mqtt_client->mqtt_loop();
 
   // DynamicJsonDocument json(512);
-  // JsonObject device_1_obj = doc.createNestedObject("[DEVICE_ID]");
+  // JsonObject device_1_obj = json.createNestedObject("[DEVICE_ID]");
   // device_1_obj["datapoint_code_1"] = 22.3;
   // device_1_obj["datapoint_code_2"] = "string";
   // device_1_obj["datapoint_code_3"] = true;
-  // JsonObject device_2_obj = doc.createNestedObject("[DEVICE_ID]");
+  // JsonObject device_2_obj = json.createNestedObject("[DEVICE_ID]");
   // device_2_obj["datapoint_code_1"] = 22.3;
   // device_2_obj["datapoint_code_2"] = "string";
   // device_2_obj["datapoint_code_3"] = true;
   // mqtt_client->publish_value_update(json);
-  
+
   // delay(1000);
 }
 
 void resolve_mqtt(String& topic, String& payload){
-  Serial.println("incoming: " + topic + " - " + payload); 
+  Serial.println("incoming: " + topic + " - " + payload);
 
   DynamicJsonDocument payload_json(256);
   DeserializationError json_err = deserializeJson(payload_json, payload);
@@ -82,11 +82,11 @@ void resolve_mqtt(String& topic, String& payload){
         // TODO: CUSTOM INIT ACTION
       }
     }
-  } else if (topic.equals(String(module_id) + "/SET_CONFIG")){    
+  } else if (topic.equals(String(module_id) + "/SET_CONFIG")){
     JsonObject json_config = payload_json.as<JsonObject>();
 
     for (JsonPair pair : json_config) {
-      const char* device_id = pair.key().c_str(); 
+      const char* device_id = pair.key().c_str();
       const auto device_config = pair.value().as<JsonObject>();
 
       // TODO: CUSTOM DEVICE ADDRESS ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
@@ -101,7 +101,7 @@ void resolve_mqtt(String& topic, String& payload){
     unsigned char* md5_hash = MD5::make_hash(payload_cpy);
     char* md5_str = MD5::make_digest(md5_hash, 16);
     mqtt_client->publish_config_update(md5_str);
-    
+
     free(payload_cpy);
     free(md5_hash);
     free(md5_str);
@@ -109,7 +109,7 @@ void resolve_mqtt(String& topic, String& payload){
     const uint32_t device_id = payload_json["device_id"];
     const char* datapoint = payload_json["datapoint"];
     // TODO: CUSTOM VALUE ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
-    // E.G: const uint8_t value = payload_json["value"]; 
+    // E.G: const uint8_t value = payload_json["value"];
 
     Serial.print("device_id: " + device_id);
     Serial.print(" datapoint: " + String(datapoint));
