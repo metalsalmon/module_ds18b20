@@ -12,6 +12,8 @@ static const char* password = "password";
 static const char* module_id   = "DUMMY_ID";
 static const char* module_type = "DUMMY_TYPE";
 
+static const uint32_t loop_delay = 10;
+
 static FW_updater  *fw_updater = nullptr;
 static MQTT_client *mqtt_client = nullptr;
 
@@ -56,7 +58,7 @@ void loop(){
   // device_2_obj["datapoint_code_3"] = true;
   // mqtt_client->publish_value_update(json);
 
-  // delay(1000);
+  delay(loop_delay);
 }
 
 void resolve_mqtt(String& topic, String& payload){
