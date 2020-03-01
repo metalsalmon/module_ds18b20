@@ -42,6 +42,7 @@ void setup(){
   mqtt_client->subscribe((std::string(module_id) + "/SET_CONFIG").c_str());
   mqtt_client->subscribe((std::string(module_id) + "/SET_VALUE").c_str());
   mqtt_client->subscribe((std::string(module_id) + "/UPDATE_FW").c_str());
+  mqtt_client->subscribe((std::string(module_id) + "/REQUEST").c_str());
 }
 
 void loop(){
