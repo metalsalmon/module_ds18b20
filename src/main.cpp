@@ -52,6 +52,9 @@ void setup() {
   #endif
   delay(10);
 
+  module_mac = WiFi.macAddress();
+  LOG("Module MAC: " + module_mac);
+
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   while (WiFi.status() != WL_CONNECTED)
     delay(500);
