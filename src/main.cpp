@@ -23,7 +23,6 @@
 #define WIFI_SSID    "SSID"
 #define WIFI_PASS    "PASS"
 
-#define MODULE_UUID  "DUMMY_UUID"
 #define MODULE_TYPE  "DUMMY_TYPE"
 
 #define LOOP_DELAY_MS   10u
@@ -32,6 +31,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// GLOBAL OBJECTS
 ////////////////////////////////////////////////////////////////////////////////
+
+static String module_mac;
 
 static FW_updater  *fw_updater = nullptr;
 static MQTT_client *mqtt_client = nullptr;
@@ -64,19 +65,19 @@ void setup() {
 
   // MQTT broker expected to run on GW
   mqtt_client = new MQTT_client(gateway_ip.c_str());
-  mqtt_client->setup_mqtt(MODULE_UUID, MODULE_TYPE, resolve_mqtt);
+  mqtt_client->setup_mqtt(module_mac.c_str(), MODULE_TYPE, resolve_mqtt);
   LOG("Connected to MQTT broker");
   mqtt_client->publish_module_id();
-  LOG("Subscribing to ALL_MODULES ...");
+    LOG("Subscribing to ALL_MODULES ...");
   mqtt_client->subscribe("ALL_MODULES");
-  LOG(String("Subscribing to ") + MODULE_UUID + "/SET_CONFIG ...");
-  mqtt_client->subscribe((std::string(MODULE_UUID) + "/SET_CONFIG").c_str(), 2u);
-  LOG(String("Subscribing to ") + MODULE_UUID + "/SET_VALUE ...");
-  mqtt_client->subscribe((std::string(MODULE_UUID) + "/SET_VALUE").c_str(), 2u);
-  LOG(String("Subscribing to ") + MODULE_UUID + "/UPDATE_FW ...");
-  mqtt_client->subscribe((std::string(MODULE_UUID) + "/UPDATE_FW").c_str(), 2u);
-  LOG(String("Subscribing to ") + MODULE_UUID + "/REQUEST ...");
-  mqtt_client->subscribe((std::string(MODULE_UUID) + "/REQUEST").c_str(), 2u);
+  LOG("Subscribing to " + module_mac + "/SET_CONFIG ...");
+  mqtt_client->subscribe((module_mac + "/SET_CONFIG").c_str(), 2u);
+  LOG("Subscribing to " + module_mac + "/SET_VALUE ...");
+  mqtt_client->subscribe((module_mac + "/SET_VALUE").c_str(), 2u);
+  LOG("Subscribing to " + module_mac + "/UPDATE_FW ...");
+  mqtt_client->subscribe((module_mac + "/UPDATE_FW").c_str(), 2u);
+  LOG("Subscribing to " + module_mac + "/REQUEST ...");
+  mqtt_client->subscribe((module_mac + "/REQUEST").c_str(), 2u);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +118,7 @@ static void resolve_mqtt(String& topic, String& payload) {
     return;
   }
 
-  if (topic.equals("ALL_MODULES") || topic.equals(String(MODULE_UUID) + "/REQUEST")) {
+  if (topic.equals("ALL_MODULES") || topic.equals(module_mac + "/REQUEST")) {
     const char* request = payload_json["request"];
 
     if (request != nullptr) {
@@ -133,7 +134,7 @@ static void resolve_mqtt(String& topic, String& payload) {
         standby_mode = false;
       }
     }
-  } else if (topic.equals(String(MODULE_UUID) + "/SET_CONFIG")) {    
+  } else if (topic.equals(module_mac + "/SET_CONFIG")) {    
     JsonObject json_config = payload_json.as<JsonObject>();
     LOG("Deleting previous configuration");
     // TODO: DELETE PREVIOUS CONFIGURATION
@@ -163,7 +164,7 @@ static void resolve_mqtt(String& topic, String& payload) {
     LOG(String("Config MD5 checksum: ") + md5_str.c_str());
 
     mqtt_client->publish_config_update(md5_str);
-  } else if (topic.equals(String(MODULE_UUID) + "/SET_VALUE")) {
+  } else if (topic.equals(module_mac + "/SET_VALUE")) {
 
     const char* device_uuid = payload_json["device_uuid"];
     const char* datapoint = payload_json["datapoint"];
@@ -176,7 +177,7 @@ static void resolve_mqtt(String& topic, String& payload) {
     // LOG(String("\t value: ") + value);
 
     // TODO: CUSTOM SET_VALUE ACTION
-  } else if (topic.equals(String(MODULE_UUID) + "/UPDATE_FW")) {
+  } else if (topic.equals(module_mac + "/UPDATE_FW")) {
     const char* version = payload_json["version"];
 
     LOG(String("Updating firmware to version: ") + version);
