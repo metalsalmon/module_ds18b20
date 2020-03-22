@@ -45,7 +45,8 @@ static void resolve_mqtt(String& topic, String& payload);
 /// SETUP
 ////////////////////////////////////////////////////////////////////////////////
 
-void setup() {
+void setup() 
+{
 
   #if DEBUG == true
     Serial.begin(115200);
@@ -87,7 +88,8 @@ void setup() {
 /// LOOP
 ////////////////////////////////////////////////////////////////////////////////
 
-void loop() {
+void loop() 
+{
 
   mqtt_client->loop();
 
@@ -109,42 +111,57 @@ void loop() {
 /// MQTT RESOLVER
 ////////////////////////////////////////////////////////////////////////////////
 
-static void resolve_mqtt(String& topic, String& payload) {
+static void resolve_mqtt(String& topic, String& payload) 
+{
 
   LOG("Received message: " + topic + " - " + payload);
 
   DynamicJsonDocument payload_json(256);
   DeserializationError json_err = deserializeJson(payload_json, payload);
 
-  if (json_err) {
+  if (json_err) 
+  {
     LOG("JSON error: " + String(json_err.c_str()));
     return;
   }
 
-  if (topic.equals("ALL_MODULES") || topic.equals(module_mac + "/REQUEST")) {
+  if (topic.equals("ALL_MODULES") || topic.equals(module_mac + "/REQUEST")) 
+  {
     const char* request = payload_json["request"];
 
-    if (request != nullptr) {
-      if (String(request) == "module_discovery") {
+    if (request != nullptr) 
+    {
+      if (String(request) == "module_discovery") 
         mqtt_client->publish_module_id();
-      } else if (String(request) == "stop") {
+      else if (String(request) == "stop") 
+      {
+        const uint16_t sequence_number = payload_json["sequence_number"];
+
         LOG("Switching to standby mode");
         // TODO: CUSTOM STOP ACTION
         standby_mode = true;
-      } else if (String(request) == "start") {
+        // TODO: mqtt_client->publish_request_result(sequence_number, result, details, QOS = 1);
+      } 
+      else if (String(request) == "start") 
+      {
+        const uint16_t sequence_number = payload_json["sequence_number"];
+
         LOG("Switching to active mode");
         // switch to active mode
         standby_mode = false;
+        // TODO: mqtt_client->publish_request_result(sequence_number, result, details, QOS = 1);
       }
     }
-  } else if (topic.equals(module_mac + "/SET_CONFIG")) {    
+  } 
+  else if (topic.equals(module_mac + "/SET_CONFIG")) 
+  {    
     JsonObject json_config = payload_json.as<JsonObject>();
     LOG("Deleting previous configuration");
     // TODO: DELETE PREVIOUS CONFIGURATION
 
     // create devices according to received configuration
-    for (const JsonPair& pair : json_config) { 
-
+    for (const JsonPair& pair : json_config) 
+    { 
       const char* const device_uuid = pair.key().c_str();
       const JsonObject device_config = pair.value().as<JsonObject>();
       // TODO: CUSTOM DEVICE ADDRESS ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
@@ -167,10 +184,12 @@ static void resolve_mqtt(String& topic, String& payload) {
     LOG(String("Config MD5 checksum: ") + md5_str.c_str());
 
     mqtt_client->publish_config_update(md5_str);
-  } else if (topic.equals(module_mac + "/SET_VALUE")) {
-
+  } 
+  else if (topic.equals(module_mac + "/SET_VALUE")) 
+  {
     const char* device_uuid = payload_json["device_uuid"];
     const char* datapoint = payload_json["datapoint"];
+    const uint16_t sequence_number = payload_json["sequence_number"];
     // TODO: CUSTOM VALUE ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
     // E.G: const uint8_t value = payload_json["value"];   
 
@@ -180,15 +199,18 @@ static void resolve_mqtt(String& topic, String& payload) {
     // LOG(String("\t value: ") + value);
 
     // TODO: CUSTOM SET_VALUE ACTION
-  } else if (topic.equals(module_mac + "/UPDATE_FW")) {
+    // TODO: mqtt_client->publish_request_result(sequence_number, result, details, QOS = 1);
+  } 
+  else if (topic.equals(module_mac + "/UPDATE_FW")) 
+  {
     const char* version = payload_json["version"];
+    const uint16_t sequence_number = payload_json["sequence_number"];
 
     LOG(String("Updating firmware to version: ") + version);
-    bool res = fw_updater->update(version);
-    if (!res) {
-      LOG("\t result: error");
-    } else {
-      LOG("\t result: ok");
-    }
+    bool result = fw_updater->update(version);
+    String log_msg = result ? "\t result: ok" : "\t result: error";
+    LOG(log_msg);
+    
+    mqtt_client->publish_request_result(sequence_number, result);
   }
 }
