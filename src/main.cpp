@@ -5,9 +5,12 @@
 #include <FW_updater.hpp>
 #include <MQTT_client.hpp>
 #include <MD5.hpp>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <DS18B20.cpp>
 
 // debug mode, set to 0 if making a release
-#define DEBUG 1
+#define DEBUG 0
 
 // Logging macro used in debug mode
 #if DEBUG == 1
@@ -23,8 +26,9 @@
 #define WIFI_SSID    "SSID"
 #define WIFI_PASS    "PASS"
 
-#define MODULE_TYPE  "DUMMY_TYPE"
+#define MODULE_TYPE  "DS18B20"
 
+#define ONE_WIRE_PIN 4
 #define LOOP_DELAY_MS   10u
 #define FW_UPDATE_PORT  5000u
 
@@ -36,6 +40,10 @@ static String module_mac;
 
 static FW_updater  *fw_updater = nullptr;
 static MQTT_client *mqtt_client = nullptr;
+
+static OneWire one_wire(ONE_WIRE_PIN);
+static DallasTemperature devices_bus(&one_wire);
+static std::vector<DS18B20> devices;
 
 static bool standby_mode = false;
 
@@ -93,17 +101,27 @@ void loop()
 
   mqtt_client->loop();
 
-  // DynamicJsonDocument json(512);
-  // JsonObject device_1_obj = json.createNestedObject("[DEVICE_ID]");
-  // device_1_obj["datapoint_code_1"] = 22.3;
-  // device_1_obj["datapoint_code_2"] = "string";
-  // device_1_obj["datapoint_code_3"] = true;
-  // JsonObject device_2_obj = json.createNestedObject("[DEVICE_ID]");
-  // device_2_obj["datapoint_code_1"] = 22.3;
-  // device_2_obj["datapoint_code_2"] = "string";
-  // device_2_obj["datapoint_code_3"] = true;
-  // mqtt_client->publish_value_update(json);
+  if (!devices.empty() && !standby_mode)
+  {
+    DynamicJsonDocument json(512);
 
+    for(DS18B20& device : devices)
+    {
+      if(!device.decrease_counter()) continue;
+      devices_bus.requestTemperaturesByAddress(device.address);
+      JsonObject device_obj = json.createNestedObject(device.device_uuid.c_str());
+      device_obj["temp"] = devices_bus.getTempC(device.address);
+    }
+
+    if(!json.isNull()){
+      #if DEBUG == 1
+        String json_log;
+        serializeJson(json, json_log);
+        LOG(json_log);
+      #endif
+      mqtt_client->publish_value_update(json);
+    }
+  }
   delay(LOOP_DELAY_MS);
 }
 
@@ -133,23 +151,19 @@ static void resolve_mqtt(String& topic, String& payload)
     {
       if (String(request) == "module_discovery") 
         mqtt_client->publish_module_id();
-      else if (String(request) == "stop") 
+      else if (String(request) == "stop")
       {
         const uint16_t sequence_number = payload_json["sequence_number"];
-
         LOG("Switching to standby mode");
-        // TODO: CUSTOM STOP ACTION
         standby_mode = true;
-        // TODO: mqtt_client->publish_request_result(sequence_number, result, details, QOS = 1);
+        mqtt_client->publish_request_result(sequence_number, true, "", 1);
       } 
       else if (String(request) == "start") 
       {
         const uint16_t sequence_number = payload_json["sequence_number"];
-
         LOG("Switching to active mode");
-        // switch to active mode
         standby_mode = false;
-        // TODO: mqtt_client->publish_request_result(sequence_number, result, details, QOS = 1);
+        mqtt_client->publish_request_result(sequence_number, true, "", 1);
       }
     }
   } 
@@ -157,24 +171,19 @@ static void resolve_mqtt(String& topic, String& payload)
   {    
     JsonObject json_config = payload_json.as<JsonObject>();
     LOG("Deleting previous configuration");
-    // TODO: DELETE PREVIOUS CONFIGURATION
+    std::vector<DS18B20>().swap(devices);
 
-    // create devices according to received configuration
     for (const JsonPair& pair : json_config) 
     { 
-      const char* const device_uuid = pair.key().c_str();
+      const char* device_uuid = pair.key().c_str();
       const JsonObject device_config = pair.value().as<JsonObject>();
-      // TODO: CUSTOM DEVICE ADDRESS ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
-      // E.G: const uint8_t address = device_config["address"];
-
       const uint16_t poll_rate = device_config["poll_rate"];
-
+      const char* address = device_config["address"];
       LOG("Creating device with parameters: ");
       LOG(String("\t uuid:\t") + device_uuid);
-      // LOG(String("\t address:\t") + address);
-      LOG(String("\t interval_rate:\t") + ((poll_rate * 1000) / LOOP_DELAY_MS));
-
-      // TODO: CUSTOM DEVICE CREATION ACTION
+      //LOG(String("\t address:\t") + address);
+      LOG(String("\t interval_rate:\t") + (poll_rate * 1000) / LOOP_DELAY_MS);
+      devices.emplace_back(device_uuid, poll_rate * 1000/LOOP_DELAY_MS, address);
     }
 
     // calculate config MD5 chuecksum
