@@ -1,7 +1,8 @@
 #include <DallasTemperature.h>
 
 class DS18B20
-{   private:
+{
+    private:
         uint32_t iteration_counter;
     public:
         const std::string device_uuid;
@@ -31,5 +32,4 @@ class DS18B20
         }
         return false;
     }
-    
 };
