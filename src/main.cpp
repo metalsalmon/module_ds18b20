@@ -110,7 +110,7 @@ void loop()
       if(!device.decrease_counter()) continue;
       devices_bus.requestTemperaturesByAddress(device.address);
       JsonObject device_obj = json.createNestedObject(device.device_uuid.c_str());
-      device_obj["temp"] = devices_bus.getTempC(device.address);
+      device_obj["TEMP"] = devices_bus.getTempC(device.address);
     }
 
     if(!json.isNull()){

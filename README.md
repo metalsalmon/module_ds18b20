@@ -10,7 +10,7 @@
 
 | Datapoint name | Datapoint code | Units | Description |
 |:-:|:-:|:-:|:-:|
-| Temperature | temp | °C | Temperature (°C) |
+| Temperature | TEMP | °C | Temperature (°C) |
 
 
 **Address format:**
