@@ -80,12 +80,10 @@ void setup()
   mqtt_client->setup_mqtt(module_mac.c_str(), MODULE_TYPE, resolve_mqtt);
   LOG("Connected to MQTT broker");
   mqtt_client->publish_module_id();
-    LOG("Subscribing to ALL_MODULES ...");
+  LOG("Subscribing to ALL_MODULES ...");
   mqtt_client->subscribe("ALL_MODULES");
   LOG("Subscribing to " + module_mac + "/SET_CONFIG ...");
   mqtt_client->subscribe((module_mac + "/SET_CONFIG").c_str(), 2u);
-  LOG("Subscribing to " + module_mac + "/SET_VALUE ...");
-  mqtt_client->subscribe((module_mac + "/SET_VALUE").c_str(), 2u);
   LOG("Subscribing to " + module_mac + "/UPDATE_FW ...");
   mqtt_client->subscribe((module_mac + "/UPDATE_FW").c_str(), 2u);
   LOG("Subscribing to " + module_mac + "/REQUEST ...");
@@ -193,22 +191,6 @@ static void resolve_mqtt(String& topic, String& payload)
     LOG(String("Config MD5 checksum: ") + md5_str.c_str());
 
     mqtt_client->publish_config_update(md5_str);
-  } 
-  else if (topic.equals(module_mac + "/SET_VALUE")) 
-  {
-    const char* device_uuid = payload_json["device_uuid"];
-    const char* datapoint = payload_json["datapoint"];
-    const uint16_t sequence_number = payload_json["sequence_number"];
-    // TODO: CUSTOM VALUE ASSIGNMENT (ACCORDING TO DATATYPE AND RANGE)
-    // E.G: const uint8_t value = payload_json["value"];   
-
-    LOG("Setting value:");
-    LOG(String("\t device_uuid: ") + device_uuid);
-    LOG(String("\t datapoint: ") + datapoint);
-    // LOG(String("\t value: ") + value);
-
-    // TODO: CUSTOM SET_VALUE ACTION
-    // TODO: mqtt_client->publish_request_result(sequence_number, result, details, QOS = 1);
   } 
   else if (topic.equals(module_mac + "/UPDATE_FW")) 
   {
