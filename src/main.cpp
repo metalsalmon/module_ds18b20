@@ -55,7 +55,6 @@ static void resolve_mqtt(String& topic, String& payload);
 
 void setup() 
 {
-
   #if DEBUG == true
     Serial.begin(115200);
   #endif
@@ -96,7 +95,6 @@ void setup()
 
 void loop() 
 {
-
   mqtt_client->loop();
 
   if (!devices.empty() && !standby_mode)
@@ -129,7 +127,6 @@ void loop()
 
 static void resolve_mqtt(String& topic, String& payload) 
 {
-
   LOG("Received message: " + topic + " - " + payload);
 
   DynamicJsonDocument payload_json(256);
@@ -154,14 +151,14 @@ static void resolve_mqtt(String& topic, String& payload)
         const uint16_t sequence_number = payload_json["sequence_number"];
         LOG("Switching to standby mode");
         standby_mode = true;
-        mqtt_client->publish_request_result(sequence_number, true, "", 1);
+        mqtt_client->publish_request_result(sequence_number, true);
       } 
       else if (String(request) == "start") 
       {
         const uint16_t sequence_number = payload_json["sequence_number"];
         LOG("Switching to active mode");
         standby_mode = false;
-        mqtt_client->publish_request_result(sequence_number, true, "", 1);
+        mqtt_client->publish_request_result(sequence_number, true);
       }
     }
   } 
@@ -179,7 +176,7 @@ static void resolve_mqtt(String& topic, String& payload)
       const char* address = device_config["address"];
       LOG("Creating device with parameters: ");
       LOG(String("\t uuid:\t") + device_uuid);
-      //LOG(String("\t address:\t") + address);
+      LOG(String("\t address:\t") + address);
       LOG(String("\t interval_rate:\t") + (poll_rate * 1000) / LOOP_DELAY_MS);
       devices.emplace_back(device_uuid, poll_rate * 1000/LOOP_DELAY_MS, address);
     }
