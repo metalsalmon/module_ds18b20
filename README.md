@@ -14,7 +14,7 @@
 
 
 **Address format:**
-* String of 8 bytes with space as delimiter
+* string of 8 bytes with space as delimiter
 * example: 28 84 54 79 97 04 03 12
 
 **Connection scheme**
