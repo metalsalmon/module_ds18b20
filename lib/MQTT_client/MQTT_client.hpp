@@ -1,11 +1,11 @@
 #pragma once
 
+#define ARDUINOJSON_ENABLE_STD_STRING 1
+
 #include <WiFi.h>
 #include <MQTT.h>
 #include <string>
 #include <ArduinoJson.h>
-
-#define ARDUINOJSON_ENABLE_STD_STRING 1
 
 class MQTT_client : public MQTTClient 
 {
